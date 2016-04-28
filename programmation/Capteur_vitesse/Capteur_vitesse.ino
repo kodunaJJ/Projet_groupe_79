@@ -1,4 +1,6 @@
 //programme de recuperation de la vitesse de pedalage de l'utilisateur
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 const int motor_pin = A0;
   // declaration des variables utilisees
@@ -7,6 +9,7 @@ float k_motor = 0.00094; // constante fem du moteur
 float v = 0; // vitesse de pedalage en tr/min
 float v_lin = 0; // vitesse du cycliste
 float gear_ratio = 1; // rapport reduction pedalier/capteur vitesse 
+
   
 // fonctions
 
@@ -25,16 +28,19 @@ double linear_speed(float v, float wheel_diam, float bracket){
 void setup(){ // initialisation
   
   Serial.begin(9600); // communication arduino --> PC
-
+    // set up the LCD's number of columns and rows: 
+  lcd.begin(16, 2);
+  // Print a message to the LCD.
+  lcd.clear();
 }
 
 // debut programme
 
 void loop(){
-  
   analogValue = analogRead(motor_pin);
   v = drive_speed(analogValue,1,k_motor);
   v_lin = linear_speed(v,24,1);
+  lcd.setCursor(0, 0);
   Serial.print("analogValue = ");
   Serial.print(analogValue);
   Serial.print("\t");
@@ -43,6 +49,11 @@ void loop(){
   Serial.print("vitesse lin = ");
   Serial.print(v_lin);
   Serial.print("\n");
+  lcd.print("anaVal = ");
+  lcd.print(analogValue);
+  lcd.setCursor(0,1);
+  lcd.print("vitesse = ");
+  lcd.print(v_lin);
   delay(1000);
 }
   
