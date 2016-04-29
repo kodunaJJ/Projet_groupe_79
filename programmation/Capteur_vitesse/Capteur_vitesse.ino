@@ -14,7 +14,7 @@ float gear_ratio = 1; // rapport reduction pedalier/capteur vitesse
 // fonctions
 
 double drive_speed(int analogValue, float gear_ratio, float motor_param){
-  float v_d= analogValue/gear_ratio*5.0/1024.0/motor_param;
+  float v_d= analogValue/gear_ratio*5.0/1023.0/motor_param;
   return v_d;
 }
   
