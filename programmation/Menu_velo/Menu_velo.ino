@@ -73,10 +73,57 @@ unsigned char Button_pressed(const char Next, const char Back, const char Down, 
     return 0;  
 }
 
-void menu_action(unsigned char Val_button_pressed){
+unsigned char menu_action(unsigned char Val_button_pressed, unsigned char* page, unsigned int cursor_blink_delay){
 
-	// mettre le switch et toute les actions associees (page+=1,etc...)	
+	// mettre le switch et toute les actions associees (page+=1,etc...)
 	
+	switch(Val_button_pressed){
+		case 1:
+			page+=1;
+			break;
+		
+		case 2:
+			page-=1;	
+			break;
+		case 3:
+			lcd.setCursor(14,0);
+            lcd.cursor();
+          	delay(cursor_blink_delay);
+          	lcd.noCursor();
+          	break;
+        case 4:
+            lcd.setCursor(14,1);
+            lcd.cursor();
+        	delay(cursor_blink_delay);
+        	lcd.noCursor();
+            break;
+        case 5:  
+        	// a voir
+        case 6:
+        	// a voir;
+        
+        default:
+        	return 0;
+	}
+	switch(page){
+		case 0:
+			// mettre animation transition
+			welcome_screen();
+			// mettre animations
+			break;
+		case 1:
+		
+			selection_screen1();
+			
+			break;
+		case 2:
+		/* .
+		   .
+		   .
+		   .
+		*/
+	}
+			   
 }
 void next_page(unsigned int time, unsigned char posX, unsigned char posY){
   lcd.setCursor(posX,posY);
@@ -151,6 +198,7 @@ unsigned int debounce_delay=50;
 unsigned int next_animation_delay=200;
 unsigned int previous_animation_delay=200;
 unsigned int selection_screen_transition_delay=500; 
+unsigned int cursor_blink_delay=100;
 
 /* variable liees au comportement du menu */
 unsigned char page=0;
