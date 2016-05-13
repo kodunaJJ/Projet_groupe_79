@@ -8,8 +8,8 @@ int analogValue = 0; // valeur numerique de la tension en sortie du capteur
 float k_motor = 0.00094; // constante fem du moteur
 float v = 0; // vitesse de pedalage en tr/min
 float v_lin = 0; // vitesse du cycliste
-float gear_ratio_sensor = 1; // rapport reduction pedalier/capteur vitesse 
-float gear_ratio = 1;
+float gear_ratio_sensor = 5; // rapport reduction pedalier/capteur vitesse 
+float gear_ratio = 1;        // rapport reduction plateau/roue
 
   
 // fonctions
@@ -39,7 +39,7 @@ void setup(){ // initialisation
 
 void loop(){
   analogValue = analogRead(motor_pin);
-  v = drive_speed(analogValue,1,k_motor);
+  v = drive_speed(analogValue,gear_ratio_sensor,k_motor);
   v_lin = linear_speed(v,24,1);
   lcd.setCursor(0, 0);
   Serial.print("analogValue = ");
