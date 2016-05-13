@@ -25,31 +25,29 @@ unsigned char debounce_pullup_button(const char pin_input, unsigned int debounce
      return digitalRead(pin_input); 
 }
 
-void motor_brake_cmd( const char ena, const char in1, const char in2)/*, const char pot)*/ {
+void motor_brake_cmd( const char ena, const char in1, const char in2, int pwm_value){
   
-  //int vitesse = analogRead(potar)/4;
- // analogWrite(ena,vitesse);
-  digitalWrite(ena,HIGH);
+ analogWrite(ena,pwm_value);
+  //digitalWrite(ena,HIGH);
   digitalWrite(in1,HIGH);
   digitalWrite(in2,LOW);
   // pour la phase de test
   //delay(10000);
 }
 
-void motor_loose_cmd( const char ena, const char in1, const char in2)/*, const char pot)*/ {
+void motor_loose_cmd( const char ena, const char in1, const char in2, int pwm_value){
   
-  //int vitesse = analogRead(potar)/4;
-  //analogWrite(ena,vitesse);
-  digitalWrite(ena,HIGH);
+  analogWrite(ena,pwm_value);
+  //digitalWrite(ena,HIGH);
   digitalWrite(in1,LOW);
   digitalWrite(in2,HIGH);
   // pour la phase de test
   //delay(10000);
 }
 
-void motor_stop_cmd(const char ena, const char in1, const char in2){
+void motor_stop_cmd(const char ena, const char in1, const char in2, int pwm_value){
   
-  analogWrite(ena,0);
+  analogWrite(ena,pwm_value);
   digitalWrite(in1,LOW);
   digitalWrite(in2,LOW);
   // pour phase de test. Peut etre a garder ??
@@ -64,20 +62,20 @@ void motor_decel(const char ena, const char in1, const char in2, float t, float 
   // a faire
 }
 
-void motor_manu_cmd(const char ena, const char in1, const char in2,const char ForwardButton,const char BackwardButton, unsigned int debounce_delay){
+void motor_manu_cmd(const char ena, const char in1, const char in2,const char ForwardButton,const char BackwardButton, unsigned int debounce_delay /*int pwm_value*/){
   unsigned char Fwd=digitalRead(ForwardButton);
   Fwd=debounce_pullup_button(ForwardButton,debounce_delay);
   unsigned char Bwd=digitalRead(BackwardButton);
   Bwd=debounce_pullup_button(BackwardButton,debounce_delay);
   
   if((Bwd && Fwd)||(Bwd==0 && Fwd==0)){
-    motor_stop_cmd(ena,in1,in2);
+    motor_stop_cmd(ena,in1,in2,25);
   }
   else if(Fwd==0){
-          motor_brake_cmd(ena,in1,in2);
+          motor_brake_cmd(ena,in1,in2,255);
        }
        else{
-         motor_loose_cmd(ena,in1,in2);
+         motor_loose_cmd(ena,in1,in2,255);
        }
 }
 
