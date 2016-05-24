@@ -49,7 +49,7 @@ void motor_stop_cmd(const char ena, const char in1, const char in2, int pwm_valu
   
   analogWrite(ena,pwm_value);
   digitalWrite(in1,LOW);
-  digitalWrite(in2,LOW);
+  digitalWrite(in2,HIGH);
   // pour phase de test. Peut etre a garder ??
   delay(1000);
 }
