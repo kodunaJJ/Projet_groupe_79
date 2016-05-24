@@ -30,7 +30,10 @@ unsigned char Buttonchoice=0;
 unsigned char action=0;
 
 /* variables liees aux parametres */
-//float* bike_wght=0;
+float bike_weight=0;
+float user_weight=0;
+float alpha_slope=0;
+float k_motor=0;
 
 
 void setup(){
@@ -110,71 +113,6 @@ unsigned char Button_pressed(unsigned int debounce_delay){
     return 0;  
 }
 
-/*unsigned char menu_action(unsigned char Val_button_pressed, unsigned char* page,unsigned char action, unsigned int cursor_blink_delay, unsigned int next_animation_delay,unsigned int previous_animation_delay){
-
-	// mettre le switch et toute les actions associees (page+=1,etc...)
-	action=0;
-	switch(Val_button_pressed){
-		case 1:
-			*page=*page+1;
-                        action=1;
-			break;
-		
-		case 2:
-			*page-=1;
-                        action=1;	
-			break;
-		case 3:
-			lcd.setCursor(14,0);
-            lcd.cursor();
-          	delay(cursor_blink_delay);
-          	lcd.noCursor();
-          	break;
-        case 4:
-            lcd.setCursor(14,1);
-            lcd.cursor();
-        	delay(cursor_blink_delay);
-        	lcd.noCursor();
-            break;
-        case 5:  
-        	// a voir
-            break;
-        case 6:
-        	// a voir
-            break;
-        default:
-        	break;
-	}
-    return action;
-}*/
-
-/*void menu_display(unsigned char* page,unsigned char action, unsigned int next_animation_delay,unsigned int previous_animation_delay){
-  
-	switch(*page){
-//		case 0:
-//			// mettre animation transition
-//                        if(action)lcd.clear();
-//			welcome_screen(next_animation_delay);
-//			// mettre animations
-//			break;
-		case 1:
-		        if(action)lcd.clear();
-			selection_screen1(next_animation_delay);
-			
-			break;
-		case 2:
-                      if(action)lcd.clear();
-		      selection_screen2(previous_animation_delay,next_animation_delay);
-                      break;
-               
-                case 3:
-                      if(action)lcd.clear();
-                      selection_screen3(previous_animation_delay,next_animation_delay);
-                      break;
-                
-	}
-			   
-}*/
 void next_page(unsigned int time, unsigned char posX, unsigned char posY){
   lcd.setCursor(posX,posY);
   lcd.print(">");
@@ -209,24 +147,24 @@ void selection_screen1(unsigned int next_anim_delay){
     lcd.setCursor(4,0);
     lcd.print("1)START");
     lcd.setCursor(4,1);
-    lcd.print("2)EDITEUR");
+    //lcd.print("2)EDITEUR");
     next_page(next_anim_delay,14,1);
 }
 
 void selection_screen2(unsigned int prev_anim_delay, unsigned int next_anim_delay){
     lcd.setCursor(2,0);
-    lcd.print("3)PARAMETRES");
+    lcd.print("2)PARAMETRES");
     lcd.setCursor(3,1);
-    lcd.print("4)RECORDS");
+    lcd.print("3)RECORDS");
     next_page(next_anim_delay,14,1);
     previous_page(prev_anim_delay,1,1);
   }
   
 void selection_screen3(unsigned int prev_anim_delay, unsigned int next_anim_delay){
     lcd.setCursor(5,0);
-    lcd.print("5)AIDE");
+    lcd.print("4)AIDE");
     lcd.setCursor(4,1);
-    lcd.print("6)CREDITS");
+    lcd.print("5)CREDITS");
     lcd.setCursor(0,1);
     /*lcd.print("7)ABOUT ");
     lcd.print("8)CRED");*/
@@ -253,7 +191,9 @@ void credits_submenu(){
         lcd.clear();
         lcd.setCursor(3,0);
         lcd.print("MOHAMED SANA");
-        lcd.setCursor(1,1);
+        delay(3000);
+        lcd.clear();
+        lcd.setCursor(3,0);
         lcd.print("MAMADY NABE");
         delay(3000);
         lcd.clear();
@@ -264,20 +204,124 @@ void credits_submenu(){
         delay(3000);
         lcd.clear();
         lcd.print("AIDE AUXILIAIRE");
+        lcd.setCursor(0,2);
+        lcd.print("LE MAGASIN!");        
+        delay(3000);
         lcd.setCursor(0,1);
         lcd.print("CLUB ROBOTRONIK!");        
         delay(3000);
         lcd.clear();
+        lcd.print("AIDE AUXILIAIRE");
+        lcd.setCursor(4,1);
+        lcd.print("INProd!");
+        delay(3000);
+        lcd.clear();
+        
 }
 
 void help_submenu(){
-
+	
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Avant de lancer");
+		lcd.setCursor(0,1);
+		lcd.print("une simulation");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Aller dans le");
+		lcd.setCursor(0,1);
+		lcd.print("menu PARAMETRES");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("pour configurer");
+		lcd.setCursor(0,1);
+		lcd.print("le velo.");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Pour entrer une");
+		lcd.setCursor(0,1);
+		lcd.print("valeur de");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("parametre:");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("fleche droite ->");
+		lcd.setCursor(0,1);
+		lcd.print("increment/10");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("fleche gauche ->");
+		lcd.setCursor(0,1);
+		lcd.print("increment*10");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("fleche haut ->");
+		lcd.setCursor(0,1);
+		lcd.print("incrementer");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("fleche bas ->");
+		lcd.setCursor(0,1);
+		lcd.print("decrementer");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Attention le");
+		lcd.setCursor(0,1);
+		lcd.print("poids maximal");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("utilisateur est");
+		lcd.setCursor(0,1);
+		lcd.print("de 95Kg.");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Pour demarrer");
+		lcd.setCursor(0,1);
+		lcd.print("une simulation");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("aller dans le");
+		lcd.setCursor(0,1);
+		lcd.print("menu START");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("puis suivre les");
+		lcd.setCursor(0,1);
+		lcd.print("instructions.");
+		while(Button_pressed(debounce_delay)!=1);
+		lcd.clear();
+		lcd.setCursor(0,0);
+		lcd.print("Les meilleurs");
+		lcd.setCursor(0,1);
+		lcd.print("temps sont");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
+                lcd.setCursor(0,0);
+		lcd.print("visibles dans le");
+		lcd.setCursor(0,1);
+		lcd.print("menu RECORDS.");
+		while(Button_pressed(debounce_delay)!=1);
+                lcd.clear();
 }
 
 void settings_submenu(/*float bike_wght*/){
   //parametrage masse velo
   /*float bike_wght=0.0;
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -324,14 +368,14 @@ void settings_submenu(/*float bike_wght*/){
   lcd.setCursor(12,1);
   lcd.print("Kg");
   lcd.setCursor(4,1);
-  }   */    
+  } */      
   /*bike_weight_config(bike_wght);
   while(*bike_wght<90); */   
 
   // parametrage masse utilisateur
 
   /*float user_wght=0.0;
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -378,17 +422,16 @@ void settings_submenu(/*float bike_wght*/){
   default:
          break;
   }
-  
   lcd.print(user_wght);
   lcd.setCursor(12,1);
   lcd.print("Kg");
   lcd.setCursor(4,1);
-  } */
+  }*/ 
 
   //PARAMETRES CALCUL VITESSE
   // constante moteur
   /*double motor_set=0.0;
-  double inc_step=0.0; 
+  double inc_step=1.0; 
   double unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -440,7 +483,7 @@ void settings_submenu(/*float bike_wght*/){
   
   // rapport reduction pedalier/capteur
   /*float gear_ratio_sensor=0.0;
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -489,7 +532,7 @@ void settings_submenu(/*float bike_wght*/){
   }*/
   // taille roues velo
   /*int wheel_size=0.0;
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -543,14 +586,14 @@ void settings_submenu(/*float bike_wght*/){
   float gear_ratio=0.0;
   int chain_wheel_teeth_nb=0;
   int cogwheel_teeth_nb=0;
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit = 0.1;
   char pos=0;
   unsigned char buttonchoice=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("BRAQUET");
-  lcd.setCursor(,1);
+  lcd.setCursor(0,1);
   
   while(buttonchoice!=6){
   if(chain_wheel_teeth_nb<0.0) chain_wheel_teeth_nb=0.0;
@@ -562,17 +605,21 @@ void settings_submenu(/*float bike_wght*/){
   switch(buttonchoice){
     
   case 1: 
-           unit*=10;
            pos++;
+           if(pos==1)break;
+           /*unit*=10;
+           
            if(unit>1) unit=1;
-           inc_step=1/unit;
+           inc_step=1/unit;*/
            break;         
        
   case 2:   
-          unit/=10;
           pos--;
+          /*if(pos==1)break;
+          unit/=10;
+          
           if(unit<0.01) unit=0.01;
-          inc_step=1/unit;
+          inc_step=1/unit;*/
           break;
    
   case 3:
@@ -593,7 +640,7 @@ void settings_submenu(/*float bike_wght*/){
   default:
          break;
   }
-  gear_ratio=chain_wheel_teeth_nb/cogwheel_teeth_nb;
+  gear_ratio=(float)chain_wheel_teeth_nb/(float)cogwheel_teeth_nb;
   lcd.print(chain_wheel_teeth_nb);
   lcd.setCursor(2,1);
   lcd.print("x");
@@ -609,7 +656,7 @@ void settings_submenu(/*float bike_wght*/){
 
 /*void bike_weight_config(float* bike_wght){
    
-  float inc_step=0.0; 
+  float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
   lcd.clear();
@@ -675,7 +722,7 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
             break;
     
     case 3:
-            //if(Buttonchoice==3) help_submenu();
+            if(Buttonchoice==3) help_submenu();
             if(Buttonchoice==4) credits_submenu();
             break;
     default:
