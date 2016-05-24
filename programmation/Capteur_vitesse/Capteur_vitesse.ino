@@ -50,11 +50,14 @@ void loop(){
   Serial.print("vitesse lin = ");
   Serial.print(v_lin);
   Serial.print("\n");
-  lcd.print("anaVal = ");
-  lcd.print(analogValue);
-  lcd.setCursor(0,1);
+ /* lcd.print("anaVal = ");
+  lcd.print(analogValue);*/
+  //lcd.setCursor(0,1);
   lcd.print("vitesse = ");
+  lcd.setCursor(0,1);
   lcd.print(v_lin);
+  lcd.setCursor(10,1);
+  lcd.print("km/h");
   delay(1000);
 }
   
