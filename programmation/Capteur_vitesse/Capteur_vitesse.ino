@@ -11,6 +11,12 @@ float v_lin = 0; // vitesse du cycliste
 float gear_ratio_sensor = 5; // rapport reduction pedalier/capteur vitesse 
 float gear_ratio = 1;        // rapport reduction plateau/roue
 
+// average variable
+
+const unsigned char numReadings = 4;
+unsigned char readings[numReadings];      // the readings from the analog input
+
+
   
 // fonctions
 
@@ -24,6 +30,41 @@ double linear_speed(float v, float wheel_diam, float gear_ratio){
    float v_rd = v*gear_ratio*3.14/30.0;
    float s = v_rd*wheel_size*3.6; // vitesse du cycliste en km/h
    return s;
+}
+
+void init_tab(unsigned char tab, unsigned char Size){
+  for (int thisReading = 0; thisReading < Size; thisReading++)
+    *(readings+thisReading) = 0;
+}
+//average function
+
+double running_average(const int analogInputPin, unsigned char numReading){
+  static unsigned char i = 0;
+  static unsigned char index;                  // the index of the current reading
+  static double total;                  // the running total
+  static double average;
+ if(i==0){ 
+   index = 0;                 
+   total = 0;                  
+   average = 0; 
+   i++;
+ }
+ total= total - readings[index];         
+  // read from the sensor:  
+  readings[index] = analogRead(analogInputPin); 
+  // add the reading to the total:
+  total= total + readings[index];       
+  // advance to the next position in the array:  
+  index = index + 1;                    
+
+  // if we're at the end of the array...
+  if (index >= numReadings)              
+    // ...wrap around to the beginning: 
+    index = 0;                           
+
+  // calculate the average:
+  average = total / numReadings; 
+  return average;
 }
 
 void setup(){ // initialisation
