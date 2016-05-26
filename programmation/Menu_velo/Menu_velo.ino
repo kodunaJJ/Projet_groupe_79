@@ -1,4 +1,5 @@
 #include <LiquidCrystal.h>
+#include <EEPROM.h>
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const char RightPin = 6;
@@ -30,11 +31,19 @@ unsigned char Buttonchoice=0;
 unsigned char action=0;
 
 /* variables liees aux parametres */
-float bike_weight=0;
-float user_weight=0;
+float bike_wght=0;
+float user_wght=0;
+float motor_set=0;
+float gear_ratio_sensor=0;
+int wheel_size=0;
+int chain_wheel_teeth_nb=0; //plateau
+int cogwheel_teeth_nb=0;    //pignon
+float gear_ratio=0;
 float alpha_slope=0;
 float k_motor=0;
 
+/*variables liees a la sauvegarde des parametres*/
+byte st_addr = 0;
 
 void setup(){
   lcd.begin(16,2);
@@ -44,8 +53,9 @@ void setup(){
   pinMode(LeftPin,INPUT_PULLUP);
   pinMode(UpPin,INPUT_PULLUP);
   pinMode(DownPin,INPUT_PULLUP);
-  /*pinMode(Button1Pin,INPUT_PULLUP);
-  pinMode(Button2Pin,INPUT_PULLUP);*/
+  pinMode(Button1Pin,INPUT_PULLUP);
+  pinMode(Button2Pin,INPUT_PULLUP);
+  bike_wght=load_float_variable_EEPROM(st_addr);
 }
 
 /*void scrollRight(unsigned char column, unsigned char row, char shift ){
@@ -55,6 +65,41 @@ void setup(){
  void scrollRight(unsigned char column, unsigned row){
  
  }*/
+
+byte store_variable_EEPROM(float* value, byte address){
+  byte* ptr = (byte*)value;
+  byte value_test=0;
+  for(byte i=0; i<sizeof(*value);i++){
+    EEPROM.write(address,ptr[i]);
+    value_test=EEPROM.read(address);
+    Serial.print(value_test);
+    Serial.print("\t");
+    address++;
+  }
+  return address;
+}
+
+byte store_int_variable_EEPROM(int* value, byte address){
+  byte* ptr = (byte*)value;
+  byte value_test=0;
+  for(byte i=0; i<sizeof(*value);i++){
+    EEPROM.write(address,ptr[i]);
+    value_test=EEPROM.read(address);
+    Serial.print(value_test);
+    Serial.print("\t");
+    address++;
+  }
+  return address;
+}
+
+float load_float_variable_EEPROM(byte address){
+  float* variable=0;
+  for(byte i=0;i<sizeof(variable);i++){
+   *(variable+i)=EEPROM.read(address);
+   address++;
+  }
+  return *variable;
+}  
 
 unsigned char debounce_pullup_button(const char pin_input, unsigned int debounce_delay){
   
@@ -96,7 +141,7 @@ unsigned char Button_pressed(unsigned int debounce_delay){
           return 4;
         }
     }
-      /* if(digitalRead(Button1Pin)==0){
+       if(digitalRead(Button1Pin)==0){
       reading = debounce_pullup_button(Button1Pin,debounce_delay);
         if(reading==0) { 
           wait_button_release(Button1Pin);
@@ -109,7 +154,7 @@ unsigned char Button_pressed(unsigned int debounce_delay){
           wait_button_release(Button2Pin);
           return 6;
         }
-    }*/
+    }
     return 0;  
 }
 
@@ -318,9 +363,9 @@ void help_submenu(){
                 lcd.clear();
 }
 
-void settings_submenu(/*float bike_wght*/){
+void settings_submenu(){
   //parametrage masse velo
-  /*float bike_wght=0.0;
+  //float bike_wght=0.0;
   float inc_step=1.0; 
   float unit=0.1;
   unsigned char buttonchoice=0;
@@ -329,7 +374,7 @@ void settings_submenu(/*float bike_wght*/){
   lcd.print("POIDS VELO:");
   lcd.setCursor(4,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(unit>100) unit=100.0;
   if(unit<0.1) unit=0.1;
   if(bike_wght<0.0) bike_wght=0.0;
@@ -354,7 +399,7 @@ void settings_submenu(/*float bike_wght*/){
           bike_wght-=inc_step;
           break;
   case 5:
-        // enregistrement dans flash du poids velo
+          st_addr=store_variable_EEPROM(&bike_wght,st_addr);// enregistrement dans flash du poids velo
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -368,28 +413,26 @@ void settings_submenu(/*float bike_wght*/){
   lcd.setCursor(12,1);
   lcd.print("Kg");
   lcd.setCursor(4,1);
-  } */      
-  /*bike_weight_config(bike_wght);
-  while(*bike_wght<90); */   
+  }        
 
   // parametrage masse utilisateur
 
-  /*float user_wght=0.0;
-  float inc_step=1.0; 
-  float unit=0.1;
-  unsigned char buttonchoice=0;
+  //float user_wght=0.0;
+  inc_step=1.0; 
+  unit=0.1;
+  buttonchoice=0;
   lcd.clear();
   lcd.setCursor(1,0);
   lcd.print("POIDS CYCLISTE:");
   lcd.setCursor(4,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(user_wght<0.0) user_wght=0.0;
-  if(user_wght>95.0){
+  /*if(user_wght>95.0){
     lcd.setCursor(14,1);
     lcd.print("!!");
     lcd.setCursor(4,1);
-  }
+  }*/
     
   buttonchoice=Button_pressed(25);
   switch(buttonchoice){
@@ -414,6 +457,7 @@ void settings_submenu(/*float bike_wght*/){
           break;
   case 5:
         // enregistrement dans flash du poids velo
+        st_addr=store_variable_EEPROM(&user_wght,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -426,20 +470,20 @@ void settings_submenu(/*float bike_wght*/){
   lcd.setCursor(12,1);
   lcd.print("Kg");
   lcd.setCursor(4,1);
-  }*/ 
+  }
 
   //PARAMETRES CALCUL VITESSE
   // constante moteur
-  /*double motor_set=0.0;
-  double inc_step=1.0; 
-  double unit=0.1;
-  unsigned char buttonchoice=0;
+  //double motor_set=0.0;
+  inc_step=1.0; 
+  unit=0.1;
+  buttonchoice=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("CONSTANTE MOTEUR");
   lcd.setCursor(0,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(motor_set<0.0) motor_set=0.0;
   if(motor_set>10.0)motor_set=10;
     
@@ -466,6 +510,7 @@ void settings_submenu(/*float bike_wght*/){
           break;
   case 5:
         // enregistrement dans flash du poids velo
+        st_addr=store_variable_EEPROM(&motor_set,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -479,19 +524,19 @@ void settings_submenu(/*float bike_wght*/){
   lcd.setCursor(7,1);
   lcd.print("V/tr/min");
   lcd.setCursor(0,1);
-  }*/
+  }
   
   // rapport reduction pedalier/capteur
-  /*float gear_ratio_sensor=0.0;
-  float inc_step=1.0; 
-  float unit=0.1;
-  unsigned char buttonchoice=0;
+  //float gear_ratio_sensor=0.0;
+  inc_step=1.0; 
+  unit=0.1;
+  buttonchoice=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("R.RED.CAPTEUR v");
   lcd.setCursor(5,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(gear_ratio_sensor<0.0) gear_ratio_sensor=0.0;
   if(gear_ratio_sensor>999.9)gear_ratio_sensor=999.9;
     
@@ -518,6 +563,7 @@ void settings_submenu(/*float bike_wght*/){
           break;
   case 5:
         // enregistrement dans flash du poids velo
+        st_addr=store_variable_EEPROM(&user_wght,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -529,18 +575,18 @@ void settings_submenu(/*float bike_wght*/){
   
   lcd.print(gear_ratio_sensor);
   lcd.setCursor(5,1);
-  }*/
+  }
   // taille roues velo
-  /*int wheel_size=0.0;
-  float inc_step=1.0; 
-  float unit=0.1;
-  unsigned char buttonchoice=0;
+  //int wheel_size=0.0;
+  inc_step=1.0; 
+  unit=0.1;
+  buttonchoice=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("TAILLE DES ROUES");
   lcd.setCursor(6,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(wheel_size<0.0) wheel_size=0.0;
   if(wheel_size>999.9)wheel_size=999.9;
     
@@ -580,22 +626,22 @@ void settings_submenu(/*float bike_wght*/){
   lcd.setCursor(12,1);
   lcd.print("mm");
   lcd.setCursor(6,1);
-  }*/
+  }
   
   // rapport reduction plateu/roue
-  float gear_ratio=0.0;
-  int chain_wheel_teeth_nb=0;
-  int cogwheel_teeth_nb=0;
-  float inc_step=1.0; 
-  float unit = 0.1;
+  //float gear_ratio=0.0;
+  //int chain_wheel_teeth_nb=0;
+  //int cogwheel_teeth_nb=0;
+  inc_step=1.0; 
+  unit = 0.1;
   char pos=0;
-  unsigned char buttonchoice=0;
+  buttonchoice=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("BRAQUET");
   lcd.setCursor(0,1);
   
-  while(buttonchoice!=6){
+  while(buttonchoice!=6 && buttonchoice!=5){
   if(chain_wheel_teeth_nb<0.0) chain_wheel_teeth_nb=0.0;
   if(chain_wheel_teeth_nb>99) chain_wheel_teeth_nb=99;
   if(cogwheel_teeth_nb<0.0) cogwheel_teeth_nb=0.0;
@@ -654,59 +700,6 @@ void settings_submenu(/*float bike_wght*/){
   }
 }
 
-/*void bike_weight_config(float* bike_wght){
-   
-  float inc_step=1.0; 
-  float unit=0.1;
-  unsigned char buttonchoice=0;
-  lcd.clear();
-  lcd.setCursor(2,0);
-  lcd.print("POIDS VELO:");
-  lcd.setCursor(4,1);
-  
-  while(buttonchoice!=6){
-  if(unit>100) unit=100.0;
-  if(unit<0.1) unit=0.1;
-  if(*bike_wght<0.0) *bike_wght=0.0;
-  if(*bike_wght>100.0) *bike_wght=100.0;
-  buttonchoice=Button_pressed(25);
-  switch(buttonchoice){
-    
-  case 1: 
-           unit*=10.0;
-           inc_step=1/unit;
-           break;         
-       
-  case 2:   
-          unit/=10.0;
-          inc_step=1/unit;
-          break;
-   
-  case 3:
-          *bike_wght+=inc_step;
-          break;
-  case 4: 
-          *bike_wght-=inc_step;
-          break;
-  case 5:
-        // enregistrement dans flash du poids velo
-          //return *bike_wght;
-          break;
-  case 6:
-       // rechargement de l'ancienne valeur du poids
-         break;
-  
-  default:
-         break;
-  }
-  
-  lcd.print(*bike_wght);
-  lcd.setCursor(12,1);
-  lcd.print("Kg");
-  lcd.setCursor(4,1);
-  }
-}*/
-
 void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bike_wght*/){ 
   
   switch(page){
@@ -714,11 +707,13 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
     case 1:
             //if(Buttonchoice==3) start_submenu();
             //if(Buttonchoice==4) editor_submenu();
+            lcd.clear();
             break;
    
     case 2:
-            if(Buttonchoice==3) settings_submenu(/*bike_wght*/);
-            //if(Buttonchoice==4) records_submenu();    
+            if(Buttonchoice==3) settings_submenu();
+            //if(Buttonchoice==4) records_submenu(); 
+            lcd.clear();   
             break;
     
     case 3:
@@ -734,110 +729,7 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
 
 void loop(){
   /*menu();*/
-  /*while(page==0){
 
-    welcome_screen();
-    reading = debounce_pullup_button(RightPin,debounce_delay);
-      if(reading==0) {
-        page=page+1;
-
-      }
-      if(reading==0) {
-        delay(500);
-        lcd.clear();
-      }
-  }
-  while(page==1){
-    selection_screen1(next_animation_delay);
-    if(digitalRead(RightPin)==0){
-      reading = debounce_pullup_button(RightPin,debounce_delay);
-        if(reading==0) { 
-          page = page + 1;
-        }
-    }
-   if(digitalRead(LeftPin)==0){
-      reading = debounce_pullup_button(LeftPin,debounce_delay);
-        if(reading==0) { 
-          page = page - 1;
-        }
-    }
-   if(reading==0) {
-    delay(500);
-    lcd.clear();
-   }   
-  }
-  while(page==2){
-    selection_screen2(previous_animation_delay,next_animation_delay);
-    if(digitalRead(RightPin)==0){
-      reading = debounce_pullup_button(RightPin,debounce_delay);
-        if(reading==0) { 
-          page = page + 1;
-        }
-    }
-    if(digitalRead(LeftPin)==0){
-      reading = debounce_pullup_button(LeftPin,debounce_delay);
-        if(reading==0) { 
-          page = page - 1;
-        }
-    }
-    if(digitalRead(DownPin)==0){
-      reading = debounce_pullup_button(DownPin,debounce_delay);
-        if(reading==0) { 
-          lcd.setCursor(14,1);
-          lcd.cursor();
-          delay(100);
-          lcd.noCursor();
-        }
-    }
-    if(digitalRead(UpPin)==0){
-      reading = debounce_pullup_button(UpPin,debounce_delay);
-        if(reading==0) { 
-          lcd.setCursor(14,0);
-                    lcd.cursor();
-          delay(100);
-          lcd.noCursor();
-        }
-    }
-      /*if(reading==0) {
-        delay(500);
-        lcd.clear();
-      }
-      
-  } 
-  while(page==3){
-    selection_screen3(previous_animation_delay,next_animation_delay);
-    if(digitalRead(RightPin)==0){
-      reading = debounce_pullup_button(RightPin,debounce_delay);
-        if(reading==0) { 
-          page = 1;
-        }
-    }
-    if(digitalRead(LeftPin)==0){
-      reading = debounce_pullup_button(LeftPin,debounce_delay);
-        if(reading==0) { 
-          page = page - 1;
-        }
-    }
-      if(reading==0) {
-        delay(500);
-        lcd.clear();
-      }
- }
-  reading=1;*/
- 
-/*start: do{
-     welcome_screen(next_animation_delay);
-     Buttonchoice = Button_pressed(25);
-    action=menu_action(Buttonchoice,page,action,200,200,200);
- }while(Buttonchoice==0);
- 
- do {
-   menu_display(page,action,200,200);
-   Buttonchoice = Button_pressed(25);
-   action=menu_action(Buttonchoice,page,action,200,200,200);
-   
- }while(*page!=0 || Buttonchoice==0);
-  goto start;*/
   do{
       welcome_screen(next_animation_delay);
       Buttonchoice = Button_pressed(25);
