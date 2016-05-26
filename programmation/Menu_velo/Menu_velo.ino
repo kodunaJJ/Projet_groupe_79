@@ -8,6 +8,7 @@ const char UpPin=8;
 const char DownPin=9;
 const char Button1Pin=10; // validation
 const char Button2Pin=13; // cancel 
+const int motor_pin = A0; //capteur vitesse
 
 /* etat des boutons de commande */   
 unsigned char RightButtonState = HIGH;
@@ -33,17 +34,24 @@ unsigned char action=0;
 /* variables liees aux parametres */
 float bike_wght=0;
 float user_wght=0;
-float motor_set=0;
-float gear_ratio_sensor=0;
-int wheel_size=0;
+unsigned int wheel_size=0;
 int chain_wheel_teeth_nb=0; //plateau
 int cogwheel_teeth_nb=0;    //pignon
 float gear_ratio=0;
 float alpha_slope=0;
 float k_motor=0;
 
-/*variables liees a la sauvegarde des parametres*/
+/* variables liees a la sauvegarde des parametres*/
 byte st_addr = 0;
+
+/* variables liees au capteur de vitesse*/
+
+float v = 0; // vitesse de pedalage en tr/min
+float v_lin = 0; // vitesse du cycliste
+float gear_ratio_sensor=0;
+float motor_set=0;
+const unsigned char numReadings = 4;
+unsigned int readings[numReadings];      // the readings from the analog input
 
 void setup(){
   lcd.begin(16,2);
@@ -55,7 +63,8 @@ void setup(){
   pinMode(DownPin,INPUT_PULLUP);
   pinMode(Button1Pin,INPUT_PULLUP);
   pinMode(Button2Pin,INPUT_PULLUP);
-  bike_wght=load_float_variable_EEPROM(st_addr);
+  //bike_wght=load_float_variable_EEPROM(st_addr);
+  wheel_size=load_int_variable_EEPROM(st_addr);
 }
 
 /*void scrollRight(unsigned char column, unsigned char row, char shift ){
@@ -79,7 +88,7 @@ byte store_variable_EEPROM(float* value, byte address){
   return address;
 }
 
-byte store_int_variable_EEPROM(int* value, byte address){
+byte store_int_variable_EEPROM(unsigned int* value, byte address){
   byte* ptr = (byte*)value;
   byte value_test=0;
   for(byte i=0; i<sizeof(*value);i++){
@@ -100,6 +109,21 @@ float load_float_variable_EEPROM(byte address){
   }
   return *variable;
 }  
+
+unsigned int load_int_variable_EEPROM(byte address){
+  unsigned int variable;
+  for(byte i=0;i<sizeof(variable);i++){
+   
+   if(i>0) {variable+=(EEPROM.read(address)<<(8*i));}
+   else {variable=EEPROM.read(address);}
+   Serial.print(variable);
+   Serial.print("\t");
+   
+   address++;
+  }
+  address-=sizeof(variable);
+  return variable;
+} 
 
 unsigned char debounce_pullup_button(const char pin_input, unsigned int debounce_delay){
   
@@ -399,7 +423,7 @@ void settings_submenu(){
           bike_wght-=inc_step;
           break;
   case 5:
-          st_addr=store_variable_EEPROM(&bike_wght,st_addr);// enregistrement dans flash du poids velo
+          //st_addr=store_variable_EEPROM(&bike_wght,st_addr);// enregistrement dans flash du poids velo
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -457,7 +481,7 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
-        st_addr=store_variable_EEPROM(&user_wght,st_addr);
+        //st_addr=store_variable_EEPROM(&user_wght,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -492,7 +516,7 @@ void settings_submenu(){
     
   case 1: 
            unit*=10;
-           if(unit>1000000) unit=1000000.0;
+           if(unit>100) unit=100.0;
            inc_step=1/unit;
            break;         
        
@@ -510,7 +534,8 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
-        st_addr=store_variable_EEPROM(&motor_set,st_addr);
+        motor_set/=1000;
+        //st_addr=store_variable_EEPROM(&motor_set,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -521,8 +546,8 @@ void settings_submenu(){
   }
   
   lcd.print(motor_set);
-  lcd.setCursor(7,1);
-  lcd.print("V/tr/min");
+  lcd.setCursor(4,1);
+  lcd.print("V/1000tr/min");
   lcd.setCursor(0,1);
   }
   
@@ -563,7 +588,7 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
-        st_addr=store_variable_EEPROM(&user_wght,st_addr);
+       // st_addr=store_variable_EEPROM(&user_wght,st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -613,9 +638,11 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
+        store_int_variable_EEPROM(&wheel_size, st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
+       wheel_size=load_int_variable_EEPROM(st_addr);
          break;
   
   default:
@@ -678,6 +705,7 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
+        
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
@@ -700,12 +728,22 @@ void settings_submenu(){
   }
 }
 
+void start_submenu(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Indiquer la");
+  lcd.setCursor(0,1);
+  lcd.print("pente a simuler");
+  while(Button_pressed(debounce_delay)!=1);
+  
+}
+
 void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bike_wght*/){ 
   
   switch(page){
     
     case 1:
-            //if(Buttonchoice==3) start_submenu();
+            if(Buttonchoice==3) start_submenu();
             //if(Buttonchoice==4) editor_submenu();
             lcd.clear();
             break;
@@ -725,7 +763,85 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
   }
 }
            
+/* fonctions liees au capteur de vitesse */
 
+double drive_speed(int analogValue, float gear_ratio_sensor, float motor_param){
+  float v_d= analogValue/gear_ratio_sensor*5.0/1023.0/motor_param;
+  return v_d;
+}
+  
+double linear_speed(float v, float wheel_diam, float gear_ratio){ 
+  float wheel_size = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
+   float v_rd = v*gear_ratio*3.14/30.0;
+   float s = v_rd*wheel_size*3.6; // vitesse du cycliste en km/h
+   return s;
+}
+
+void init_tab(unsigned int* tab, unsigned char Size){
+  for (int thisReading = 0; thisReading < Size; thisReading++)
+    *(readings+thisReading) = 0;
+}
+//average function
+
+float running_average(const int analogInputPin, const unsigned char numReading, unsigned int* tab){
+  static unsigned char i = 0;
+  static unsigned int index;                  // the index of the current reading
+  static float total;                  // the running total
+  static float average;
+ if(i==0){ 
+   index = 0;                 
+   total = 0;                  
+   average = 0; 
+   i++;
+ }
+ total= total - *(tab+index);         
+  // read from the sensor:  
+  *(tab+index) = analogRead(analogInputPin);
+  // add the reading to the total:
+  total= total + *(tab+index);       
+  // advance to the next position in the array:  
+  index = index + 1;                    
+
+  // if we're at the end of the array...
+  if (index >= numReadings)              
+    // ...wrap around to the beginning: 
+    index = 0;                           
+
+  // calculate the average:
+  average = total / numReadings; 
+  return average;
+}
+
+/* fonctions liees a la commande du moteur */
+
+void motor_brake_cmd( const char ena, const char in1, const char in2, int pwm_value){
+  
+ analogWrite(ena,pwm_value);
+  //digitalWrite(ena,HIGH);
+  digitalWrite(in1,HIGH);
+  digitalWrite(in2,LOW);
+  // pour la phase de test
+  //delay(10000);
+}
+
+void motor_loose_cmd( const char ena, const char in1, const char in2, int pwm_value){
+  
+  analogWrite(ena,pwm_value);
+  //digitalWrite(ena,HIGH);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,HIGH);
+  // pour la phase de test
+  //delay(10000);
+}
+
+void motor_stop_cmd(const char ena, const char in1, const char in2, int pwm_value){
+  
+  analogWrite(ena,pwm_value);
+  digitalWrite(in1,LOW);
+  digitalWrite(in2,HIGH);
+  // pour phase de test. Peut etre a garder ??
+  delay(1000);
+}
 
 void loop(){
   /*menu();*/
@@ -747,10 +863,10 @@ while(1){
                         action=1;	
 			break;
 		case 3:
-                        submenu_display(page,Buttonchoice/*,bike_wght*/);
+                        submenu_display(page,Buttonchoice);
           	        break;
                 case 4:
-                        submenu_display(page,Buttonchoice/*,bike_wght*/);
+                        submenu_display(page,Buttonchoice);
                         break;
                 case 5:  
         	// a voir
