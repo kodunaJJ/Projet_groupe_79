@@ -41,7 +41,7 @@ unsigned int wheel_size=0;
 int chain_wheel_teeth_nb=0; //plateau
 int cogwheel_teeth_nb=0;    //pignon
 float gear_ratio=0;
-float alpha_slope=10;
+float alpha_slope=0;
 float k_motor=0;
 
 /*variables liees a la simulation */
@@ -56,7 +56,7 @@ float rayon = 0.3;
 float viscosite_air = 0.25;
 float vitesse_rot = 12.5;
 float accel_pesanteur = 9.8;
-float masse = 45;
+//float masse = 45;
 float frot_sol = 0.002;
 float couple_const = 0;
 float F_ressort = 0;
@@ -234,7 +234,7 @@ void previous_page(unsigned int time, unsigned char posX, unsigned char posY){
 
 void welcome_screen(unsigned int next_anim_delay){
   lcd.setCursor(0,0);
-  lcd.print("* VELO WII 2.0 *");
+  lcd.print("*  RANGE ONE  *");
   lcd.setCursor(3,1);
   lcd.print("HOME PAGE");
   next_page(next_anim_delay,14,1);
@@ -423,7 +423,7 @@ void settings_submenu(){
   unsigned char buttonchoice=0;
   lcd.clear();
   lcd.setCursor(2,0);
-  lcd.print("POIDS VELO:");
+  lcd.print("MASSE VELO:");
   lcd.setCursor(4,1);
   
   while(buttonchoice!=6 && buttonchoice!=5){
@@ -475,7 +475,7 @@ void settings_submenu(){
   buttonchoice=0;
   lcd.clear();
   lcd.setCursor(1,0);
-  lcd.print("POIDS CYCLISTE:");
+  lcd.print("MASSE CYCLISTE:");
   lcd.setCursor(4,1);
   
   while(buttonchoice!=6 && buttonchoice!=5){
@@ -640,22 +640,22 @@ void settings_submenu(){
   lcd.setCursor(6,1);
   
   while(buttonchoice!=6 && buttonchoice!=5){
-  if(wheel_size<0.0) wheel_size=0.0;
-  if(wheel_size>999.9)wheel_size=999.9;
+  if(wheel_size<0) wheel_size=0;
+  if(wheel_size>99)wheel_size=99;
     
   buttonchoice=Button_pressed(25);
   switch(buttonchoice){
     
   case 1: 
-           unit*=10;
+           /*unit*=10;
            if(unit>1) unit=1;
-           inc_step=1/unit;
+           inc_step=1/unit;*/
            break;         
        
   case 2:   
-          unit/=10;
+          /*unit/=10;
           if(unit<0.01) unit=0.01;
-          inc_step=1/unit;
+          inc_step=1/unit;*/
           break;
    
   case 3:
@@ -666,11 +666,11 @@ void settings_submenu(){
           break;
   case 5:
         // enregistrement dans flash du poids velo
-        store_int_variable_EEPROM(&wheel_size, st_addr);
+        //store_int_variable_EEPROM(&wheel_size, st_addr);
           break;
   case 6:
        // rechargement de l'ancienne valeur du poids
-       wheel_size=load_int_variable_EEPROM(st_addr);
+       //wheel_size=load_int_variable_EEPROM(st_addr);
          break;
   
   default:
@@ -679,7 +679,7 @@ void settings_submenu(){
   
   lcd.print(wheel_size);
   lcd.setCursor(12,1);
-  lcd.print("mm");
+  lcd.print("''");
   lcd.setCursor(6,1);
   }
   
@@ -758,7 +758,7 @@ void settings_submenu(){
 
 void start_submenu(){
   lcd.clear();
-  /*lcd.setCursor(0,0);
+  lcd.setCursor(0,0);
   lcd.print("Indiquer la");
   lcd.setCursor(0,1);
   lcd.print("pente a simuler");
@@ -811,7 +811,7 @@ void start_submenu(){
   lcd.setCursor(12,1);
   lcd.print("deg");
   lcd.setCursor(4,1);
-  }*/
+  }
   
   lcd.clear();
   lcd.setCursor(0,0);
@@ -835,6 +835,26 @@ void start_submenu(){
   }
 }
 
+void records_submenu(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("JOEL a realise");
+  lcd.setCursor(0,1);
+  lcd.print("un exploit.");
+  while(Button_pressed(debounce_delay)!=1);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Il a pedale");
+  lcd.setCursor(0,1);
+  lcd.print("pendant 1 heure."); 
+  while(Button_pressed(debounce_delay)!=1);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Pourrez-vous le");
+  lcd.setCursor(0,1);
+  lcd.print("battre ?? :P");
+  while(Button_pressed(debounce_delay)!=1);
+}
 void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bike_wght*/){ 
   
   switch(page){
@@ -847,7 +867,7 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
    
     case 2:
             if(Buttonchoice==3) settings_submenu();
-            //if(Buttonchoice==4) records_submenu(); 
+            if(Buttonchoice==4) records_submenu(); 
             lcd.clear();   
             break;
     
@@ -862,8 +882,9 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
 
 //fonction pour calculer le couple
 void calcul_elements(){
+  rayon = (float)wheel_size*2.54/100.0;
   couple_const = eta*beta*rayon;
-  couple_simu = couple_const*(viscosite_air*(beta*vitesse_rot*rayon)*(beta*vitesse_rot*rayon) + masse*accel_pesanteur*sin(alpha_slope*PI/180) + frot_sol*masse*accel_pesanteur*cos(alpha_slope*PI/180));
+  couple_simu = couple_const*(viscosite_air*(beta*vitesse_rot*rayon)*(beta*vitesse_rot*rayon) + (user_wght+bike_wght)*accel_pesanteur*sin(alpha_slope*PI/180) + frot_sol*(user_wght+bike_wght)*accel_pesanteur*cos(alpha_slope*PI/180));
   F_ressort = 11.98*couple_simu;
   longueur_fil =2*F_ressort/2821.0 ;
   temps_simu = 0.8*longueur_fil;
