@@ -1,14 +1,17 @@
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
+#include "math.h"
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 const char RightPin = 6;
 const char LeftPin=7;
-const char UpPin=8;
+const char UpPin=0;
 const char DownPin=9;
-const char Button1Pin=10; // validation
+//const char Button1Pin=10; // validation
 const char Button2Pin=13; // cancel 
 const int motor_pin = A0; //capteur vitesse
+const char ena=10;/*simple enable ou variation de vitesse si PWM*/
+const char in1=1;/*broche de contrle du sens de rotation moteur et commande marche arret */
 
 /* etat des boutons de commande */   
 unsigned char RightButtonState = HIGH;
@@ -32,14 +35,33 @@ unsigned char Buttonchoice=0;
 unsigned char action=0;
 
 /* variables liees aux parametres */
-float bike_wght=0;
+float bike_wght=0; //cos(30.0*PI/180.0);
 float user_wght=0;
 unsigned int wheel_size=0;
 int chain_wheel_teeth_nb=0; //plateau
 int cogwheel_teeth_nb=0;    //pignon
 float gear_ratio=0;
-float alpha_slope=0;
+float alpha_slope=10;
 float k_motor=0;
+
+/*variables liees a la simulation */
+float pente_simu = 0;
+float couple_simu = 0;
+float temps_simu = 0;
+float longueur_fil = 0;
+float force_simu = 0;
+float eta = 0.90;
+float beta = 0.33;
+float rayon = 0.3;
+float viscosite_air = 0.25;
+float vitesse_rot = 12.5;
+float accel_pesanteur = 9.8;
+float masse = 45;
+float frot_sol = 0.002;
+float couple_const = 0;
+float F_ressort = 0;
+float average = 0;
+
 
 /* variables liees a la sauvegarde des parametres*/
 byte st_addr = 0;
@@ -56,15 +78,21 @@ unsigned int readings[numReadings];      // the readings from the analog input
 void setup(){
   lcd.begin(16,2);
   lcd.clear();
+     pinMode(ena,OUTPUT);
+   pinMode(in1,OUTPUT);
+  analogWrite(ena,0);
   //Serial.begin(9600);
   pinMode(RightPin,INPUT_PULLUP);
   pinMode(LeftPin,INPUT_PULLUP);
   pinMode(UpPin,INPUT_PULLUP);
   pinMode(DownPin,INPUT_PULLUP);
-  pinMode(Button1Pin,INPUT_PULLUP);
+  //pinMode(Button1Pin,INPUT_PULLUP);
   pinMode(Button2Pin,INPUT_PULLUP);
+  
   //bike_wght=load_float_variable_EEPROM(st_addr);
-  wheel_size=load_int_variable_EEPROM(st_addr);
+  //wheel_size=load_int_variable_EEPROM(st_addr);
+  init_tab(readings,4);
+ //motor_stop_cmd(ena,in1,/*in2*/40);
 }
 
 /*void scrollRight(unsigned char column, unsigned char row, char shift ){
@@ -165,13 +193,13 @@ unsigned char Button_pressed(unsigned int debounce_delay){
           return 4;
         }
     }
-       if(digitalRead(Button1Pin)==0){
+      /* if(digitalRead(Button1Pin)==0){
       reading = debounce_pullup_button(Button1Pin,debounce_delay);
         if(reading==0) { 
           wait_button_release(Button1Pin);
           return 5;
         }
-    }
+    }*/
        if(digitalRead(Button2Pin)==0){
       reading = debounce_pullup_button(Button2Pin,debounce_delay);
         if(reading==0) { 
@@ -730,12 +758,81 @@ void settings_submenu(){
 
 void start_submenu(){
   lcd.clear();
-  lcd.setCursor(0,0);
+  /*lcd.setCursor(0,0);
   lcd.print("Indiquer la");
   lcd.setCursor(0,1);
   lcd.print("pente a simuler");
   while(Button_pressed(debounce_delay)!=1);
   
+  float inc_step=1.0; 
+  float unit=0.1;
+  unsigned char buttonchoice=0;
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("INCLINAISON PENTE:");
+  lcd.setCursor(4,1);
+  
+  while(buttonchoice!=6 && buttonchoice!=5){
+  if(unit>20.0) unit=20.0;
+  if(unit<0.1) unit=0.1;
+  if(alpha_slope<0.0) alpha_slope=0.0;
+  if(alpha_slope>20.0) alpha_slope=20.0;
+  buttonchoice=Button_pressed(25);
+  switch(buttonchoice){
+    
+  case 1: // droite
+           unit*=10;
+           inc_step=1/unit;
+           break;         
+       
+  case 2: // gauche  
+          unit/=10;
+          inc_step=1/unit;
+          break;
+   
+  case 3: //haut
+          alpha_slope+=inc_step;
+          break;
+  case 4: //bas
+          alpha_slope-=inc_step;
+          break;
+  case 5:  //validation
+          //st_addr=store_variable_EEPROM(&bike_wght,st_addr);// enregistrement dans flash du poids velo
+          break;
+  case 6:  // retour
+       // rechargement de l'ancienne valeur du poids
+         break;
+  
+  default:
+         break;
+  }
+  
+  lcd.print(alpha_slope);
+  lcd.setCursor(12,1);
+  lcd.print("deg");
+  lcd.setCursor(4,1);
+  }*/
+  
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("debut simu");
+  lcd.setCursor(0,1);
+  average=running_average(motor_pin,4, readings);
+  vitesse_rot=drive_speed(average,4.3, 0.00094);
+  vitesse_rot=vitesse_rot*PI/30;
+  lcd.print(vitesse_rot);
+  calcul_elements();
+  motor_brake_cmd(ena,in1,/*,in2*/255,temps_simu);
+  motor_stop_cmd(ena,in1,/*in2*/25);
+  while(1){
+  lcd.setCursor(0,1);
+  average=running_average(motor_pin,4, readings);
+  vitesse_rot=drive_speed(average,4.83, 0.00094);
+  lcd.print(vitesse_rot);
+  vitesse_rot=vitesse_rot*PI/30;
+  
+  delay(1000);
+  }
 }
 
 void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bike_wght*/){ 
@@ -762,10 +859,20 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
             break;
   }
 }
+
+//fonction pour calculer le couple
+void calcul_elements(){
+  couple_const = eta*beta*rayon;
+  couple_simu = couple_const*(viscosite_air*(beta*vitesse_rot*rayon)*(beta*vitesse_rot*rayon) + masse*accel_pesanteur*sin(alpha_slope*PI/180) + frot_sol*masse*accel_pesanteur*cos(alpha_slope*PI/180));
+  F_ressort = 11.98*couple_simu;
+  longueur_fil =2*F_ressort/2821.0 ;
+  temps_simu = 0.8*longueur_fil;
+  
+}
            
 /* fonctions liees au capteur de vitesse */
 
-double drive_speed(int analogValue, float gear_ratio_sensor, float motor_param){
+double drive_speed(float analogValue, float gear_ratio_sensor, float motor_param){
   float v_d= analogValue/gear_ratio_sensor*5.0/1023.0/motor_param;
   return v_d;
 }
@@ -814,38 +921,38 @@ float running_average(const int analogInputPin, const unsigned char numReading, 
 
 /* fonctions liees a la commande du moteur */
 
-void motor_brake_cmd( const char ena, const char in1, const char in2, int pwm_value){
-  
+void motor_brake_cmd( const char ena, const char in1, /*const char in2,*/ int pwm_value, float on_time){
+  on_time*=60000;
  analogWrite(ena,pwm_value);
   //digitalWrite(ena,HIGH);
   digitalWrite(in1,HIGH);
-  digitalWrite(in2,LOW);
+  //digitalWrite(in2,LOW);
   // pour la phase de test
-  //delay(10000);
+  delay(on_time);
 }
 
-void motor_loose_cmd( const char ena, const char in1, const char in2, int pwm_value){
-  
+void motor_loose_cmd( const char ena, const char in1,/* const char in2,*/ int pwm_value, float on_time){
+  on_time*=60000;
   analogWrite(ena,pwm_value);
   //digitalWrite(ena,HIGH);
   digitalWrite(in1,LOW);
-  digitalWrite(in2,HIGH);
+  //digitalWrite(in2,HIGH);
   // pour la phase de test
-  //delay(10000);
+  delay(on_time);
 }
 
-void motor_stop_cmd(const char ena, const char in1, const char in2, int pwm_value){
+void motor_stop_cmd(const char ena, const char in1/*, const char in2*/, int pwm_value){
   
   analogWrite(ena,pwm_value);
-  digitalWrite(in1,LOW);
-  digitalWrite(in2,HIGH);
+  digitalWrite(in1,HIGH);
+  //digitalWrite(in2,HIGH);
   // pour phase de test. Peut etre a garder ??
-  delay(1000);
+  delay(1500);
 }
 
 void loop(){
   /*menu();*/
-
+  
   do{
       welcome_screen(next_animation_delay);
       Buttonchoice = Button_pressed(25);
