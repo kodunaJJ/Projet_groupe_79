@@ -13,14 +13,6 @@ const int motor_pin = A0; //capteur vitesse
 const char ena=10;/*simple enable ou variation de vitesse si PWM*/
 const char in1=1;/*broche de contrle du sens de rotation moteur et commande marche arret */
 
-/* etat des boutons de commande */   
-unsigned char RightButtonState = HIGH;
-unsigned char LeftButtonState = HIGH;
-unsigned char UpButtonState = HIGH;
-unsigned char DownButtonState = HIGH;
-unsigned char ValidationButtonState = HIGH;
-unsigned char CancelButtonState = HIGH;  
-
 /* variables liees au delay (debounce, etc,...) */
 unsigned int debounce_delay=50;
 unsigned int next_animation_delay=200;
@@ -52,7 +44,7 @@ float longueur_fil = 0;
 float force_simu = 0;
 float eta = 0.90;
 float beta = 0.33;
-float rayon = 0.3;
+float rayon = 0.0;
 float viscosite_air = 0.25;
 float vitesse_rot = 12.5;
 float accel_pesanteur = 9.8;
@@ -63,13 +55,14 @@ float F_ressort = 0;
 float average = 0;
 
 
+
 /* variables liees a la sauvegarde des parametres*/
 byte st_addr = 0;
 
 /* variables liees au capteur de vitesse*/
 
 float v = 0; // vitesse de pedalage en tr/min
-float v_lin = 0; // vitesse du cycliste
+double v_lin = 0; // vitesse du cycliste
 float gear_ratio_sensor=0;
 float motor_set=0;
 const unsigned char numReadings = 4;
@@ -301,16 +294,19 @@ void credits_submenu(){
         delay(3000);
         lcd.clear();
         lcd.print("AIDE AUXILIAIRE");
-        lcd.setCursor(0,2);
+        lcd.setCursor(0,1);
         lcd.print("LE MAGASIN!");        
         delay(3000);
         lcd.setCursor(0,1);
         lcd.print("CLUB ROBOTRONIK!");        
         delay(3000);
         lcd.clear();
-        lcd.print("AIDE AUXILIAIRE");
         lcd.setCursor(4,1);
         lcd.print("INProd!");
+        delay(3000);
+        lcd.clear();
+        lcd.setCursor(0,1);
+        lcd.print("LUCAS JULLIARD");
         delay(3000);
         lcd.clear();
         
@@ -812,7 +808,7 @@ void start_submenu(){
   lcd.print("deg");
   lcd.setCursor(4,1);
   }
-  
+  float dist_r=0;
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("debut simu");
@@ -824,15 +820,35 @@ void start_submenu(){
   calcul_elements();
   motor_brake_cmd(ena,in1,/*,in2*/255,temps_simu);
   motor_stop_cmd(ena,in1,/*in2*/25);
-  while(1){
-  lcd.setCursor(0,1);
+  do{
+  lcd.clear();
+  lcd.setCursor(0,0);
   average=running_average(motor_pin,4, readings);
   vitesse_rot=drive_speed(average,4.83, 0.00094);
+  v_lin=linear_speed(vitesse_rot, wheel_size, beta);
   lcd.print(vitesse_rot);
-  vitesse_rot=vitesse_rot*PI/30;
-  
+  //vitesse_rot=vitesse_rot*PI/30;
+  buttonchoice=Button_pressed(25);
+  lcd.setCursor(6,0);
+  lcd.print("tr/min");
+  lcd.setCursor(0,1);
+  lcd.print(v_lin);
+  lcd.setCursor(6,1);
+  lcd.print("km/h");
   delay(1000);
-  }
+  dist_r=dist_r+v_lin/3600.0;
+  }while(buttonchoice!=6);
+  motor_loose_cmd(ena,in1,200,temps_simu);
+  motor_stop_cmd(ena,in1,/*in2*/25);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("BRAVO VOUS AVEZ");
+  lcd.setCursor(0,1);
+  lcd.print("PARCOURU:");
+  lcd.print(dist_r);
+  lcd.print("km");
+  while(Button_pressed(debounce_delay)!=6);
+  lcd.clear();
 }
 
 void records_submenu(){
@@ -899,9 +915,9 @@ double drive_speed(float analogValue, float gear_ratio_sensor, float motor_param
 }
   
 double linear_speed(float v, float wheel_diam, float gear_ratio){ 
-  float wheel_size = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
-   float v_rd = v*gear_ratio*3.14/30.0;
-   float s = v_rd*wheel_size*3.6; // vitesse du cycliste en km/h
+   float wheel_d = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
+   float v_rd = v/gear_ratio*3.14/30.0;
+   float s = v_rd*wheel_d/2.0*3.6; // vitesse du cycliste en km/h
    return s;
 }
 
