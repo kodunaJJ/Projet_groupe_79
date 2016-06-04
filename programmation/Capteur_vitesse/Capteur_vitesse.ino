@@ -26,9 +26,9 @@ double drive_speed(int analogValue, float gear_ratio_sensor, float motor_param){
 }
   
 double linear_speed(float v, float wheel_diam, float gear_ratio){ 
-  float wheel_size = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
-   float v_rd = v*gear_ratio*3.14/30.0;
-   float s = v_rd*wheel_size*3.6; // vitesse du cycliste en km/h
+  float wheel_d = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
+   float v_rd = v/gear_ratio*3.14/30.0;
+   float s = v_rd*wheel_d/2.0*3.6; // vitesse du cycliste en km/h
    return s;
 }
 
@@ -90,7 +90,7 @@ void loop(){
   Serial.print("vitesse = ");
   Serial.print(v);
   Serial.print("vitesse lin = ");
-  Serial.print(v_lin);*/
+  Serial.print(v_lin);
   Serial.print("\n");
  /* lcd.print("anaVal = ");
   lcd.print(analogValue);*/
