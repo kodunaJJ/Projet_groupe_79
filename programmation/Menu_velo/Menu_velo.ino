@@ -838,6 +838,9 @@ void start_submenu(){
   delay(1000);
   dist_r=dist_r+v_lin/3600.0;
   }while(buttonchoice!=6);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Fin simu :)");
   motor_loose_cmd(ena,in1,200,temps_simu);
   motor_stop_cmd(ena,in1,/*in2*/25);
   lcd.clear();
@@ -901,7 +904,7 @@ void calcul_elements(){
   rayon = (float)wheel_size*2.54/100.0;
   couple_const = eta*beta*rayon;
   couple_simu = couple_const*(viscosite_air*(beta*vitesse_rot*rayon)*(beta*vitesse_rot*rayon) + (user_wght+bike_wght)*accel_pesanteur*sin(alpha_slope*PI/180) + frot_sol*(user_wght+bike_wght)*accel_pesanteur*cos(alpha_slope*PI/180));
-  F_ressort = 11.98*couple_simu;
+  F_ressort = 5.5*couple_simu;
   longueur_fil =2*F_ressort/2821.0 ;
   temps_simu = 0.8*longueur_fil;
   
