@@ -9,9 +9,6 @@ const char UpPin=0;
 const char DownPin=9;
 //const char Button1Pin=10; // validation
 const char Button2Pin=13; // cancel 
-const int motor_pin = A0; //capteur vitesse
-const char ena=10;/*simple enable ou variation de vitesse si PWM*/
-const char in1=1;/*broche de contrle du sens de rotation moteur et commande marche arret */
 
 /* variables liees au delay (debounce, etc,...) */
 unsigned int debounce_delay=50;
@@ -35,45 +32,16 @@ int cogwheel_teeth_nb=0;    //pignon
 float gear_ratio=0;
 float alpha_slope=0;
 float k_motor=0;
-
-/*variables liees a la simulation */
-float pente_simu = 0;
-float couple_simu = 0;
-float temps_simu = 0;
-float longueur_fil = 0;
-float force_simu = 0;
-float eta = 0.90;
-float beta = 0.33;
-float rayon = 0.0;
-float viscosite_air = 0.25;
-float vitesse_rot = 12.5;
-float accel_pesanteur = 9.8;
-//float masse = 45;
-float frot_sol = 0.002;
-float couple_const = 0;
-float F_ressort = 0;
-float average = 0;
-
-
+float motor_set=0;
+float gear_ratio_sensor=0;
 
 /* variables liees a la sauvegarde des parametres*/
 byte st_addr = 0;
 
-/* variables liees au capteur de vitesse*/
-
-float v = 0; // vitesse de pedalage en tr/min
-double v_lin = 0; // vitesse du cycliste
-float gear_ratio_sensor=0;
-float motor_set=0;
-const unsigned char numReadings = 4;
-unsigned int readings[numReadings];      // the readings from the analog input
-
 void setup(){
   lcd.begin(16,2);
   lcd.clear();
-     pinMode(ena,OUTPUT);
-   pinMode(in1,OUTPUT);
-  analogWrite(ena,0);
+     
   //Serial.begin(9600);
   pinMode(RightPin,INPUT_PULLUP);
   pinMode(LeftPin,INPUT_PULLUP);
@@ -84,8 +52,6 @@ void setup(){
   
   //bike_wght=load_float_variable_EEPROM(st_addr);
   //wheel_size=load_int_variable_EEPROM(st_addr);
-  init_tab(readings,4);
- //motor_stop_cmd(ena,in1,/*in2*/40);
 }
 
 /*void scrollRight(unsigned char column, unsigned char row, char shift ){
@@ -332,36 +298,36 @@ void help_submenu(){
 		lcd.setCursor(0,1);
 		lcd.print("le velo.");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
+        lcd.clear();
 		lcd.setCursor(0,0);
 		lcd.print("Pour entrer une");
 		lcd.setCursor(0,1);
 		lcd.print("valeur de");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("parametre:");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("fleche droite ->");
 		lcd.setCursor(0,1);
 		lcd.print("increment/10");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("fleche gauche ->");
 		lcd.setCursor(0,1);
 		lcd.print("increment*10");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("fleche haut ->");
 		lcd.setCursor(0,1);
 		lcd.print("incrementer");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("fleche bas ->");
 		lcd.setCursor(0,1);
 		lcd.print("decrementer");
@@ -402,13 +368,13 @@ void help_submenu(){
 		lcd.setCursor(0,1);
 		lcd.print("temps sont");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
-                lcd.setCursor(0,0);
+        lcd.clear();
+        lcd.setCursor(0,0);
 		lcd.print("visibles dans le");
 		lcd.setCursor(0,1);
 		lcd.print("menu RECORDS.");
 		while(Button_pressed(debounce_delay)!=1);
-                lcd.clear();
+        lcd.clear();
 }
 
 void settings_submenu(){
@@ -813,45 +779,7 @@ void start_submenu(){
   lcd.setCursor(0,0);
   lcd.print("debut simu");
   lcd.setCursor(0,1);
-  average=running_average(motor_pin,4, readings);
-  vitesse_rot=drive_speed(average,4.3, 0.00094);
-  vitesse_rot=vitesse_rot*PI/30;
-  lcd.print(vitesse_rot);
-  calcul_elements();
-  motor_brake_cmd(ena,in1,/*,in2*/255,temps_simu);
-  motor_stop_cmd(ena,in1,/*in2*/25);
-  do{
-  lcd.clear();
-  lcd.setCursor(0,0);
-  average=running_average(motor_pin,4, readings);
-  vitesse_rot=drive_speed(average,4.83, 0.00094);
-  v_lin=linear_speed(vitesse_rot, wheel_size, beta);
-  lcd.print(vitesse_rot);
-  //vitesse_rot=vitesse_rot*PI/30;
-  buttonchoice=Button_pressed(25);
-  lcd.setCursor(6,0);
-  lcd.print("tr/min");
-  lcd.setCursor(0,1);
-  lcd.print(v_lin);
-  lcd.setCursor(6,1);
-  lcd.print("km/h");
-  delay(1000);
-  dist_r=dist_r+v_lin/3600.0;
-  }while(buttonchoice!=6);
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Fin simu :)");
-  motor_loose_cmd(ena,in1,200,temps_simu);
-  motor_stop_cmd(ena,in1,/*in2*/25);
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("BRAVO VOUS AVEZ");
-  lcd.setCursor(0,1);
-  lcd.print("PARCOURU:");
-  lcd.print(dist_r);
-  lcd.print("km");
-  while(Button_pressed(debounce_delay)!=6);
-  lcd.clear();
+  /* insertion programme de gestion du simulateur */
 }
 
 void records_submenu(){
@@ -898,97 +826,7 @@ void submenu_display(unsigned char page, unsigned char Buttonchoice/*, float bik
             break;
   }
 }
-
-//fonction pour calculer le couple
-void calcul_elements(){
-  rayon = (float)wheel_size*2.54/100.0;
-  couple_const = eta*beta*rayon;
-  couple_simu = couple_const*(viscosite_air*(beta*vitesse_rot*rayon)*(beta*vitesse_rot*rayon) + (user_wght+bike_wght)*accel_pesanteur*sin(alpha_slope*PI/180) + frot_sol*(user_wght+bike_wght)*accel_pesanteur*cos(alpha_slope*PI/180));
-  F_ressort = 5.5*couple_simu;
-  longueur_fil =2*F_ressort/2821.0 ;
-  temps_simu = 0.8*longueur_fil;
-  
-}
-           
-/* fonctions liees au capteur de vitesse */
-
-double drive_speed(float analogValue, float gear_ratio_sensor, float motor_param){
-  float v_d= analogValue/gear_ratio_sensor*5.0/1023.0/motor_param;
-  return v_d;
-}
-  
-double linear_speed(float v, float wheel_diam, float gear_ratio){ 
-   float wheel_d = 2.54*wheel_diam/100.0; //conversion centimetre --> metre
-   float v_rd = v/gear_ratio*3.14/30.0;
-   float s = v_rd*wheel_d/2.0*3.6; // vitesse du cycliste en km/h
-   return s;
-}
-
-void init_tab(unsigned int* tab, unsigned char Size){
-  for (int thisReading = 0; thisReading < Size; thisReading++)
-    *(readings+thisReading) = 0;
-}
-//average function
-
-float running_average(const int analogInputPin, const unsigned char numReading, unsigned int* tab){
-  static unsigned char i = 0;
-  static unsigned int index;                  // the index of the current reading
-  static float total;                  // the running total
-  static float average;
- if(i==0){ 
-   index = 0;                 
-   total = 0;                  
-   average = 0; 
-   i++;
- }
- total= total - *(tab+index);         
-  // read from the sensor:  
-  *(tab+index) = analogRead(analogInputPin);
-  // add the reading to the total:
-  total= total + *(tab+index);       
-  // advance to the next position in the array:  
-  index = index + 1;                    
-
-  // if we're at the end of the array...
-  if (index >= numReadings)              
-    // ...wrap around to the beginning: 
-    index = 0;                           
-
-  // calculate the average:
-  average = total / numReadings; 
-  return average;
-}
-
-/* fonctions liees a la commande du moteur */
-
-void motor_brake_cmd( const char ena, const char in1, /*const char in2,*/ int pwm_value, float on_time){
-  on_time*=60000;
- analogWrite(ena,pwm_value);
-  //digitalWrite(ena,HIGH);
-  digitalWrite(in1,HIGH);
-  //digitalWrite(in2,LOW);
-  // pour la phase de test
-  delay(on_time);
-}
-
-void motor_loose_cmd( const char ena, const char in1,/* const char in2,*/ int pwm_value, float on_time){
-  on_time*=60000;
-  analogWrite(ena,pwm_value);
-  //digitalWrite(ena,HIGH);
-  digitalWrite(in1,LOW);
-  //digitalWrite(in2,HIGH);
-  // pour la phase de test
-  delay(on_time);
-}
-
-void motor_stop_cmd(const char ena, const char in1/*, const char in2*/, int pwm_value){
-  
-  analogWrite(ena,pwm_value);
-  digitalWrite(in1,HIGH);
-  //digitalWrite(in2,HIGH);
-  // pour phase de test. Peut etre a garder ??
-  delay(1500);
-}
+        
 
 void loop(){
   /*menu();*/
@@ -998,60 +836,60 @@ void loop(){
       Buttonchoice = Button_pressed(25);
   }while(Buttonchoice==0);
   
-while(1){ 
-  switch(Buttonchoice){
-		case 1:
-			page++;
-                        action=1;
-			break;
+	while(1){ 
+	  switch(Buttonchoice){
+			case 1:
+				page++;
+		                    action=1;
+				break;
 		
-		case 2:
-			page--;
-                        action=1;	
-			break;
-		case 3:
-                        submenu_display(page,Buttonchoice);
-          	        break;
-                case 4:
-                        submenu_display(page,Buttonchoice);
-                        break;
-                case 5:  
-        	// a voir
-                        break;
-                case 6:
-        	// a voir
-                        break;
-        default:
-        	break;
-	}
+			case 2:
+				page--;
+		                    action=1;	
+				break;
+			case 3:
+		                    submenu_display(page,Buttonchoice);
+		      	        break;
+		            case 4:
+		                    submenu_display(page,Buttonchoice);
+		                    break;
+		            case 5:  
+		    	// a voir
+		                    break;
+		            case 6:
+		    	// a voir
+		                    break;
+		    default:
+		    	break;
+		}
 
-switch(page){
-		case 0:
-			// mettre animation transition
-                        if(action)lcd.clear();
-			welcome_screen(next_animation_delay);
-			// mettre animations
-			break;
-		case 1:
-		        if(action)lcd.clear();
-			selection_screen1(next_animation_delay);
+	switch(page){
+			case 0:
+				// mettre animation transition
+		                    if(action)lcd.clear();
+				welcome_screen(next_animation_delay);
+				// mettre animations
+				break;
+			case 1:
+				    if(action)lcd.clear();
+				selection_screen1(next_animation_delay);
 			
-			break;
-		case 2:
-                      if(action)lcd.clear();
-		      selection_screen2(previous_animation_delay,next_animation_delay);
-                      break;
-               
-                case 3:
-                      if(action)lcd.clear();
-                      selection_screen3(previous_animation_delay,next_animation_delay);
-                      break;
-               default:  
-                      page=0; 
-	}
-action=0;
-Buttonchoice = Button_pressed(25);
+				break;
+			case 2:
+		                  if(action)lcd.clear();
+				  selection_screen2(previous_animation_delay,next_animation_delay);
+		                  break;
+		           
+		            case 3:
+		                  if(action)lcd.clear();
+		                  selection_screen3(previous_animation_delay,next_animation_delay);
+		                  break;
+		           default:  
+		                  page=0; 
+		}
+	action=0;
+	Buttonchoice = Button_pressed(25);
 
-}
+	}
 }
 
